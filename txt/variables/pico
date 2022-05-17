@@ -7,6 +7,7 @@ bool stitch
 bool stitch_ht
 bool stitch_htmet
 bool stitch_dy
+bool old_stitch_dy
 
 ####################   Global   ###################
 int npv
@@ -394,6 +395,8 @@ bool HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL
 bool HLT_Mu17_TrkIsoVVL_TkMu8_TrkIsoVVL
 bool HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ
 bool HLT_Mu17_TrkIsoVVL_TkMu8_TrkIsoVVL_DZ
+bool HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass8
+bool HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass3p8
 
 ################  Systematic variations  - to be implemented as needed  ##################
 

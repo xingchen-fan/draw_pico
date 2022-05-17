@@ -219,8 +219,8 @@ int main(){
 //   pm.Push<Hist1D>(Axis(2,0,2, !(sig_lepid == 11 || sig_lepid == 13), "ID != lep", {}),"1", samples,ops);
 //   pm.Push<Hist1D>(Axis(30,-0.5,29.5, sig_lepid, "sig_lepid", {}),"1", samples,ops).Weight(wgt);
 //   pm.Push<Hist1D>(Axis(30,-0.5,29.5, sig_lepid, "sig_lepid", {}),"1", samples,ops);
-  pm.Push<Hist1D>(Axis(5,-0.5,4.5, "nel", "Nel", {}),!(sig_lepid == 11 || sig_lepid == 13 || sig_lepid == 15), samples,ops).Weight(wgt);
-  pm.Push<Hist1D>(Axis(5,-0.5,4.5, "nmu", "Nmu", {}),!(sig_lepid == 11 || sig_lepid == 13 || sig_lepid == 15), samples,ops).Weight(wgt);
+  //pm.Push<Hist1D>(Axis(5,-0.5,4.5, "nel", "Nel", {}),!(sig_lepid == 11 || sig_lepid == 13 || sig_lepid == 15), samples,ops).Weight(wgt);
+  //pm.Push<Hist1D>(Axis(5,-0.5,4.5, "nmu", "Nmu", {}),!(sig_lepid == 11 || sig_lepid == 13 || sig_lepid == 15), samples,ops).Weight(wgt);
 //   pm.Push<Hist1D>(Axis(5,-0.5,4.5, nels, "Size of electron list", {}),"1", samples,ops).Weight(wgt);
 //   pm.Push<Hist1D>(Axis(60,0,120, dilep_mass, "dilep (ee) mass", {}),"1", samples,ops).Weight(wgt);
   vector<TableRow> cutrows;
@@ -231,8 +231,8 @@ int main(){
     }
   pm.Push<Table>("full_sync_cutflow_wlumi",      cutrows,        samples,false);
   pm.Push<Table>("full_eff_sync_cutflow_wlumi",  cutrows,        samples,false,true,false,false,true);
-  pm.Push<Table>("full_sync_cutflow_weight",     cutrows_weight, samples,false);
-  pm.Push<Table>("full_eff_sync_cutflow_weight", cutrows_weight, samples,false,true,false,false,true);
+  //pm.Push<Table>("full_sync_cutflow_weight",     cutrows_weight, samples,false);
+  //pm.Push<Table>("full_eff_sync_cutflow_weight", cutrows_weight, samples,false,true,false,false,true);
   pm.min_print_ = true;
   pm.MakePlots(35.9);
 }
