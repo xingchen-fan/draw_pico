@@ -141,7 +141,7 @@ int main() {
 
     //Plot options (linear/log stack or not)
     PlotOpt lin_lumi = log_lumi().YAxis(YAxisType::linear);
-    PlotOpt lin_stack = lin_lumi().Stack(StackType::signal_overlay);
+    PlotOpt lin_stack = lin_lumi().Stack(StackType::shapes);
     PlotOpt log_stack = log_lumi().Stack(StackType::signal_overlay);
     vector<PlotOpt> ops1 = {log_stack};
     vector<PlotOpt> ops2 = {lin_stack};
@@ -166,7 +166,7 @@ int main() {
     PlotMaker pm;
     string tag;
 
-    for(int i(0); i < 2; i++) {
+    for(int i(0); i < 1; i++) {
 
       NamedFunc cut = baseline && loose_lep.at(i);
       vector<PlotOpt> ops;
@@ -177,7 +177,7 @@ int main() {
 	ops = ops2;}
       tag += "_baseline";
 
-      pm.Push<Hist1D>(Axis(100,15,200, leadlep,    "Leading lepton Pt"      ,{}), cut, procs, ops).Weight(wgt).Tag\
+      pm.Push<Hist1D>(Axis(100,15,200, leadlep,    "Leading lepton Pt"      ,{}), "ll_lepid[0] > 0", procs, ops).Weight(wgt).Tag\
 	(tag);
       //pm.Push<Hist1D>(Axis(100,15,200, lpospt,    "Positive l pt"      ,{}), cut, procs, ops).Weight(wgt).Tag	(tag);
     }

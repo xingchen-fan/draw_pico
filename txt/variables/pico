@@ -8,6 +8,7 @@ bool stitch_ht
 bool stitch_htmet
 bool stitch_dy
 bool old_stitch_dy
+float BDT_score
 
 ####################   Global   ###################
 int npv

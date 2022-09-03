@@ -20,7 +20,7 @@
 #include "core/named_func.hpp"
 #include "core/utilities.hpp"
 #include "zgamma/zg_utilities.hpp"
-#include "core/xingchen.hpp"
+#include "core/xingchenNOdR.hpp"
 
 NamedFunc::VectorType fmu_sig(const Baby &b){
   std::vector<double> mu_sig_;
@@ -181,51 +181,49 @@ NamedFunc::ScalarType fmu_sublead(const Baby &b){
 
 
 NamedFunc::VectorType fele_dR_list(const Baby &b){
-  TLorentzVector e, p;
-  std::vector<double> el_sig_ = fel_sig(b);
   std::vector<double> ph_sig_ = fph_sig(b);
   std::vector<double> dRlist;
-  double mindr = 9999.0;
   for (unsigned j(0); j<ph_sig_.size(); j++){
-    if (ph_sig_[j] > 0.5) p.SetPtEtaPhiM(b.Photon_pt()->at(j), b.Photon_eta()->at(j), b.Photon_phi()->at(j), b.Photon_mass()->at(j));
-    else{
-      dRlist.push_back(0.0);
-      continue;
-    }
-    for (unsigned i(0); i<el_sig_.size();i++) {
-      if (el_sig_[i]>0.5)  e.SetPtEtaPhiM(b.Electron_pt()->at(i), b.Electron_eta()->at(i), b.Electron_phi()->at(i), b.Electron_mass()->at(i));
-      else continue;
-      double tempdr = abs(e.DeltaR(p));
-      if (tempdr<mindr) mindr = tempdr;
-    }
-    if (mindr>0.4) dRlist.push_back(1.0);
-    else dRlist.push_back(0.0);
+    dRlist.push_back(1.0);
   }
   return dRlist;
 }
 NamedFunc::VectorType fmuon_dR_list(const Baby &b){
-  TLorentzVector m, p;
-  std::vector<double> mu_sig_ = fmu_sig(b);
   std::vector<double> ph_sig_ = fph_sig(b);
   std::vector<double> dRlist;
-  double mindr = 9999.0;
   for (unsigned j(0); j<b.Photon_pt()->size(); j++){
+    dRlist.push_back(1.0);
+  }
+  return dRlist;
+}
+
+
+NamedFunc::ScalarType fmindR(const Baby &b){
+  TLorentzVector e, m, p;
+  std::vector<double> el_sig_ = fel_sig(b);
+  std::vector<double> mu_sig_ = fmu_sig(b);
+  std::vector<double> ph_sig_ = fph_sig(b);
+  double mindr = 9999.0;
+  double tempdr = 9999.0;
+  for (unsigned j(0); j<ph_sig_.size(); j++){
     if (ph_sig_[j] > 0.5) p.SetPtEtaPhiM(b.Photon_pt()->at(j), b.Photon_eta()->at(j), b.Photon_phi()->at(j), b.Photon_mass()->at(j));
-    else {
-      dRlist.push_back(0.0);
-      continue;
+    else continue;
+    for (unsigned i(0); i<el_sig_.size();i++) {
+      if (el_sig_[i]>0.5)  e.SetPtEtaPhiM(b.Electron_pt()->at(i), b.Electron_eta()->at(i), b.Electron_phi()->at(i), b.Electron_mass()->at(i));
+      else continue;
+      tempdr = abs(e.DeltaR(p));
+      if (tempdr<mindr) mindr = tempdr;
     }
     for (unsigned i(0); i<mu_sig_.size();i++) {
       if (mu_sig_[i]>0.5)  m.SetPtEtaPhiM(b.Muon_pt()->at(i), b.Muon_eta()->at(i), b.Muon_phi()->at(i), b.Muon_mass()->at(i));
       else continue;
-      double tempdr = abs(m.DeltaR(p));
+      tempdr = abs(m.DeltaR(p));
       if (tempdr<mindr) mindr = tempdr;
     }
-    if (mindr>0.4) dRlist.push_back(1.0);
-    else dRlist.push_back(0.0);
   }
-  return dRlist;
+  return mindr;
 }
+
 
 NamedFunc::VectorType fphoton_flags(const Baby &b){
   std::vector<double> flag;
@@ -254,31 +252,6 @@ NamedFunc::VectorType fphoton_flags(const Baby &b){
   }
 }
 
-NamedFunc::ScalarType fmindR(const Baby &b){
-  TLorentzVector e, m, p;
-  std::vector<double> el_sig_ = fel_sig(b);
-  std::vector<double> mu_sig_ = fmu_sig(b);
-  std::vector<double> ph_sig_ = fph_sig(b);
-  double mindr = 9999.0;
-  double tempdr = 9999.0;
-  for (unsigned j(0); j<ph_sig_.size(); j++){
-    if (ph_sig_[j] > 0.5) p.SetPtEtaPhiM(b.Photon_pt()->at(j), b.Photon_eta()->at(j), b.Photon_phi()->at(j), b.Photon_mass()->at(j));
-    else continue;
-    for (unsigned i(0); i<el_sig_.size();i++) {
-      if (el_sig_[i]>0.5)  e.SetPtEtaPhiM(b.Electron_pt()->at(i), b.Electron_eta()->at(i), b.Electron_phi()->at(i), b.Electron_mass()->at(i));
-      else continue;
-      tempdr = abs(e.DeltaR(p));
-      if (tempdr<mindr) mindr = tempdr;
-    }
-    for (unsigned i(0); i<mu_sig_.size();i++) {
-      if (mu_sig_[i]>0.5)  m.SetPtEtaPhiM(b.Muon_pt()->at(i), b.Muon_eta()->at(i), b.Muon_phi()->at(i), b.Muon_mass()->at(i));
-      else continue;
-      tempdr = abs(m.DeltaR(p));
-      if (tempdr<mindr) mindr = tempdr;
-    }
-  }
-  return mindr;
-}
 
 NamedFunc::ScalarType fpdgid (const Baby &b) {
   int index = -1;

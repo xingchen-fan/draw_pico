@@ -43,13 +43,12 @@ int main() {
   //ROOT file path
   string bfolder("/net/cms17/cms17r0/pico/NanoAODv2/zgamma_mc_ul/2017/mc/");
   string sfolder("/net/cms17/cms17r0/pico/NanoAODv2/zgamma_signal_ul/2017/signal/");
-  string mc_path("/net/cms17/cms17r0/pico/NanoAODv9/nano/2017/mc/");
+  string mc_path("/net/cms17/cms17r0/pico/NanoAODv2/nano/2017/mc/");
   string sig_path("/net/cms17/cms17r0/pico/NanoAODv2/nano/2017/signal/");
   NamedFunc el_trigs("HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL");//HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ
   NamedFunc mu_trigs("HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass8 || HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass3p8");
   NamedFunc trigs(el_trigs || mu_trigs);
 
-  /*
   auto proc_smzg  = Process::MakeShared<Baby_nano>("SM Z#gamma",back,TColor::GetColor("#16bac5"),{mc_path+"*ZGToLLG*"}, "1");
   //auto proc_ewkzg = Process::MakeShared<Baby_pico>("EWK Z#gamma",      back,
   //                                               TColor::GetColor("#39a9df"),{mc_path+"*LLAJJ*"},   trigs);
@@ -70,12 +69,8 @@ int main() {
   auto proc_hzg_tth  = Process::MakeShared<Baby_nano>("HToZ#gamma ttH", sig,
 						      kGreen ,{sig_path+"ttH*.root"},   "1");
 
-  auto proc_hzg_vh_wplus =  Process::MakeShared<Baby_nano>("HToZ#gamma VH (W+)", sig,
-                                                     kBlack                  ,{sig_path+"*WplusH*.root"},   "1");
-  auto proc_hzg_vh_wminus =  Process::MakeShared<Baby_nano>("HToZ#gamma VH (W-)", sig,
-                                                     kBlack                  ,{sig_path+"*WminusH*.root"},   "1");
-  auto proc_hzg_vh_ZH =  Process::MakeShared<Baby_nano>("HToZ#gamma VH (ZH)", sig,
-							    kBlack                  ,{sig_path+"*ZH*.root"},   "1");
+  auto proc_hzg_vh =  Process::MakeShared<Baby_nano>("HToZ#gamma VH", sig,
+                                                     kBlack                  ,{sig_path+"*WplusH*.root",sig_path+"*WminusH*.root",sig_path+"*ZH*.root"},   "1");
   proc_smzg->SetLineWidth (1); proc_ttg->SetLineWidth  (1);
   proc_dy->SetLineWidth   (1); proc_ewk->SetLineWidth(1);
   proc_hzg->SetLineWidth(3);
@@ -85,9 +80,9 @@ int main() {
   proc_hzg_tth->SetLineWidth(3);
   //vector<shared_ptr<Process>> procs = {proc_dy, proc_smzg, proc_hzg_vbf, proc_hzg_gg };
   //vector<shared_ptr<Process>> theory_procs = {proc_dy, proc_smzg, proc_hzg_gg};
-  vector<shared_ptr<Process>> sigprocs = {proc_hzg, proc_hzg_vbf, proc_hzg_gg, proc_hzg_tth, proc_hzg_vh_wplus,  proc_hzg_vh_wminus, proc_hzg_vh_ZH };
+  vector<shared_ptr<Process>> sigprocs = {proc_hzg_vbf, proc_hzg_gg, proc_hzg_tth, proc_hzg_vh };
   vector<shared_ptr<Process>> bkgprocs = { proc_ttg,  proc_ewk};
-  */
+
   const NamedFunc nmu("nmu",fnmu);
   const NamedFunc nel("nel", fnel);
   const NamedFunc nph("nph",fnph);
@@ -124,7 +119,6 @@ int main() {
   const NamedFunc photon_flags13("photon_flags13", fphoton_flags13);
   const NamedFunc photon_flags14("photon_flags14", fphoton_flags14);
   const NamedFunc photon_cone("photon_cone", fphoton_cone);
-  const NamedFunc mindR_v("mindR_v", fmindR); //No dR cut, min dR varaible
 //const NmaedFunc
   NamedFunc el_pt_cut ("el_pt_cut", [](const Baby &b) -> NamedFunc::ScalarType{
       std::vector<double> el_sig_ = fel_sig(b);
@@ -160,20 +154,6 @@ int main() {
 	}
       }
       return pt;
-    });
-
-  NamedFunc photon_mva ("photon_mva", [](const Baby &b) -> NamedFunc::ScalarType{
-      std::vector<double> ph_sig_ = fph_sig(b);
-      std::vector<double> edR = fele_dR_list(b);
-      std::vector<double> mdR = fmuon_dR_list(b);
-      double mva = 0.;
-      for (unsigned iph = 0; iph < b.Photon_pt()->size(); iph++) {
-        if(ph_sig_[iph]>0.5 && edR[iph] >0.5 && mdR[iph] > 0.5){
-          mva = b.Photon_mvaID()->at(iph);
-          break;
-        }
-      }
-      return mva;
     });
 
   NamedFunc truth_part_pt("truth_part_pt", [](const Baby &b) -> NamedFunc::ScalarType{
@@ -741,20 +721,24 @@ int main() {
     });
 
 
-  NamedFunc selection_el = nel>=2 && nph>=1 && el_pt_cut && ele_mll_more>50 && ele_mllg_more >100 && ele_mllg_more <180 && (ele_mllg_more + ele_mll_more) > 185 && photon_pt/ele_mllg_more > (15./110) && stitch_cut;
-  NamedFunc selection_mu = nmu>=2 && nph>=1 && mu_pt_cut && muon_mll_more>50 && muon_mllg_more >100 && muon_mllg_more < 180 && (muon_mllg_more + muon_mll_more) > 185 && photon_pt/muon_mllg_more > (15./110) && stitch_cut;
-  NamedFunc selection_el_dR = nel>=2 && nph>=1 && el_pt_cut && ele_mll_more>50 && ele_mllg_more >100 && ele_mllg_more <180 && (ele_mllg_more + ele_mll_more) > 185 && photon_pt/ele_mllg_more > (15./110) && dRcheck_cut;
-  NamedFunc selection_mu_dR = nmu>=2 && nph>=1 && mu_pt_cut && muon_mll_more>50 && muon_mllg_more >100 && muon_mllg_more < 180 && (muon_mllg_more + muon_mll_more) > 185 && photon_pt/muon_mllg_more > (15./110) && dRcheck_cut;
-  NamedFunc old_selection_el = nel>=2 && nph>=1 && el_pt_cut && ele_mll_more>50 && ele_mllg_more >100 && ele_mllg_more <180 && (ele_mllg_more + ele_mll_more) > 185 && photon_pt/ele_mllg_more > (15./110) && old_stitch_cut;
-  NamedFunc old_selection_mu = nmu>=2 && nph>=1 && mu_pt_cut && muon_mll_more>50 && muon_mllg_more >100 && muon_mllg_more < 180 && (muon_mllg_more + muon_mll_more) > 185 && photon_pt/muon_mllg_more > (15./110) && old_stitch_cut;
-  NamedFunc selection_el_nos = nel>=2 && nph>=1 && el_pt_cut && ele_mll_more>50 && ele_mllg_more >100 && ele_mllg_more <180 && (ele_mllg_more + ele_mll_more) > 185 && photon_pt/ele_mllg_more > (15./110);
-  NamedFunc selection_mu_nos = nmu>=2 && nph>=1 && mu_pt_cut && muon_mll_more>50 && muon_mllg_more >100 && muon_mllg_more < 180 && (muon_mllg_more + muon_mll_more) > 185 && photon_pt/muon_mllg_more > (15./110);
+  NamedFunc selection_el = nel>=2 && nph>=1 && el_pt_cut && ele_mll_more>50 && ele_mllg_more >100 && ele_mllg_more <180 && (ele_mllg_more + ele_mll_more) > 185 && photon_pt/ele_mllg_more > (15/110) && stitch_cut;
+  NamedFunc selection_mu = nmu>=2 && nph>=1 && mu_pt_cut && muon_mll_more>50 && muon_mllg_more >100 && muon_mllg_more < 180 && (muon_mllg_more + muon_mll_more) > 185 && photon_pt/muon_mllg_more > (15/110) && stitch_cut;
+  NamedFunc selection_el_dR = nel>=2 && nph>=1 && el_pt_cut && ele_mll_more>50 && ele_mllg_more >100 && ele_mllg_more <180 && (ele_mllg_more + ele_mll_more) > 185 && photon_pt/ele_mllg_more > (15/110) && dRcheck_cut;
+  NamedFunc selection_mu_dR = nmu>=2 && nph>=1 && mu_pt_cut && muon_mll_more>50 && muon_mllg_more >100 && muon_mllg_more < 180 && (muon_mllg_more + muon_mll_more) > 185 && photon_pt/muon_mllg_more > (15/110) && dRcheck_cut;
+  NamedFunc old_selection_el = nel>=2 && nph>=1 && el_pt_cut && ele_mll_more>50 && ele_mllg_more >100 && ele_mllg_more <180 && (ele_mllg_more + ele_mll_more) > 185 && photon_pt/ele_mllg_more > (15/110) && old_stitch_cut;
+  NamedFunc old_selection_mu = nmu>=2 && nph>=1 && mu_pt_cut && muon_mll_more>50 && muon_mllg_more >100 && muon_mllg_more < 180 && (muon_mllg_more + muon_mll_more) > 185 && photon_pt/muon_mllg_more > (15/110) && old_stitch_cut;
+  NamedFunc selection_el_1 = nel>=2 && nph>=1 && el_pt_cut && ele_mll_more>50 && ele_mll_more<100 && ele_mllg_more >100 && ele_mllg_more <180 && (ele_mllg_more + ele_mll_more) > 185 && photon_pt/ele_mllg_more >(15/110);
+  NamedFunc selection_mu_1 = nmu>=2 && nph>=1 && mu_pt_cut && muon_mll_more>50 && muon_mll_more<100 && muon_mllg_more >100 && muon_mllg_more < 180 && (muon_mllg_more + muon_mll_more) > 185 && photon_pt/muon_mllg_more > (15/110);
+  NamedFunc selection_el_2 = nel>=2 && nph>=1 && el_pt_cut && ele_mll_more>50 && ele_mllg_more >100 && ele_mllg_more <180 && (ele_mllg_more + ele_mll_more) > 185 && photon_pt/ele_mllg_more < (15/110);
+  NamedFunc selection_mu_2 = nmu>=2 && nph>=1 && mu_pt_cut && muon_mll_more>50 && muon_mllg_more >100 && muon_mllg_more < 180 && (muon_mllg_more + muon_mll_more) > 185 && photon_pt/muon_mllg_more < (15/110);
+  vector<NamedFunc> selection1 = {selection_el_1, selection_mu_1};
+  vector<NamedFunc> selection2 = {selection_el_2, selection_mu_2};
   vector<NamedFunc> selection = {selection_el, selection_mu};
-  vector<NamedFunc> selection_nos = {selection_el_nos, selection_mu_nos};
+
   vector<NamedFunc> old_selection = {old_selection_el, old_selection_mu};
   vector<NamedFunc> selection_dR = {selection_el_dR, selection_mu_dR};
+  vector<NamedFunc> mll = {ele_mll_more, muon_mll_more};
   vector<NamedFunc> mllg = {ele_mllg_more, muon_mllg_more};
-
 
   NamedFunc print_photon_pt ("print_photon_pt", [el_pt_cut, photon_pt, stitch_cut](const Baby &b) -> NamedFunc::ScalarType{
       std::vector<double> ph_sig_ = fph_sig(b);
@@ -773,25 +757,21 @@ int main() {
     });
 
 
-  auto proc_dy_new= Process::MakeShared<Baby_nano>("DY + Jets",back,TColor::GetColor("#ffb400"),{mc_path+"*DYJetsToLL_M-50*"}, trigs && stitch_cut);//changed
-  auto proc_sm= Process::MakeShared<Baby_nano>("SM Z#gamma",back,TColor::GetColor("#16bac5"),{mc_path+"ZGToLLG_*"}, trigs);//changed
-  auto proc_dy_old= Process::MakeShared<Baby_nano>("DY + Jets Old",sig,kRed,{mc_path+"*DYJetsToLL_M-50*"}, trigs && old_stitch_cut);
-  auto proc_ggf_sig= Process::MakeShared<Baby_nano>("GGF",back,TColor::GetColor("#ffb400"),{sig_path+"*GluGlu*"}, trigs); 
-  //vector<shared_ptr<Process>> procs = {proc_smzg, proc_dy_nos,proc_hzg_vbf, proc_hzg_gg, proc_hzg_tth, proc_hzg_vh };
-  proc_dy_new->SetLineWidth(1);
-  proc_dy_old->SetLineWidth(1);
-  proc_sm->SetLineWidth(1); 
-  proc_ggf_sig->SetLineWidth(3);
-
-  vector<shared_ptr<Process>> dy = {proc_dy_new};
+  auto proc_dy_nos= Process::MakeShared<Baby_nano>("DY + Jets",back,TColor::GetColor("#ffb400"),{mc_path+"*DYJetsToLL_M-50*"}, trigs && stitch_cut);
+  auto proc_sm= Process::MakeShared<Baby_nano>("SM Z#gamma",back,TColor::GetColor("#16bac5"),{mc_path+"ZGToLLG_*"}, trigs);
+  auto proc_hzg_no   = Process::MakeShared<Baby_nano>("HToZ#gamma(x1000)", sig, kRed  ,{sig_path+"*.root"},   trigs);
+  bkgprocs = {proc_smzg, proc_dy_nos};
+  vector<shared_ptr<Process>> procs = {proc_smzg, proc_dy_nos, proc_hzg_no};
+  proc_dy_nos->SetLineWidth(1);
+  proc_hzg_no->SetLineWidth(3);
+  vector<shared_ptr<Process>> stitch = {proc_dy_nos};
   vector<shared_ptr<Process>> sm = {proc_sm};
-  vector<shared_ptr<Process>> stitchcom = {proc_dy_new, proc_dy_old};
-  vector<shared_ptr<Process>> ggf = {proc_ggf_sig};
+
   PlotOpt log_lumi("txt/plot_styles.txt","CMSPaper");
   log_lumi.Title(TitleType::info)
     .YAxis(YAxisType::log)
     .Stack(StackType::shapes)
-    .Overflow(OverflowType::none)
+    //           .Overflow(OverflowType::none)
     .YTitleOffset(1.)
     .AutoYAxis(false)
     .UseCMYK(false)
@@ -808,8 +788,8 @@ int main() {
   vector<PlotOpt> ops1 = {log_stack};
   vector<PlotOpt> ops2 = {lin_stack};
   vector<PlotOpt> ops3 = {lin_lumi, lin_stack};
-  vector<PlotOpt> op_per = {lin_lumi().Stack(StackType::shapes).Bottom(BottomType::diff)}; 
-  const NamedFunc weight_p("weight_p",[](const Baby &b) -> NamedFunc::ScalarType{
+
+  const NamedFunc weight("weight",[](const Baby &b) -> NamedFunc::ScalarType{
       //extra factor for weighting is xs/nevts_effective where effective events are calculated including negative weights
       //0.007519850838359999 GluGluH->ZG->llG xs (pb)
       //967054
@@ -829,41 +809,12 @@ int main() {
       else return w;
     });
 
-  const NamedFunc weight_tot("weight_tot",[](const Baby &b) -> NamedFunc::ScalarType{
-      float w = 1.0;
-      if (b.Generator_weight()<0) return -w;
+  NamedFunc weight_11("weight_1",[](const Baby &b) -> NamedFunc::ScalarType{
+      double w = 1.0;
+      if(b.type() >= 200000 && b.type() <= 205000)
+        return 1000*w;
       else return w;
     });
-
-
-
-  const NamedFunc weight("weight",[](const Baby &b) -> NamedFunc::ScalarType{
-      float w = 0.0;
-      float xsec = -999.;
-      float HToZG(0.001533), ZToLL(0.100974);
-      int tot = 1;
-      float sign =  b.Generator_weight() > 0? 1.: -1.;
-      std::set<std::string> names = b.FileNames();
-      std::set<std::string>::iterator it;
-      for (it = names.begin(); it != names.end(); it++){
-        TString file = *it;
-        if(file.Contains("ZGToLLG")) {  xsec = 1000*55.48; tot = 18727540;}
-        if(file.Contains("DYJetsToLL_M-50")) {xsec = 1000* 6077.22; tot = 102486448;}
-
-        if(file.Contains("GluGluHToZG"))          {xsec = 1000 * 1000 * HToZG * ZToLL * 48.58 ; tot = 400000;}
-        if(file.Contains("VBFHToZG"))             {xsec = 1000 * 1000 * HToZG * ZToLL * 3.782 ; tot = 200000;}
-        if(file.Contains("WplusH_HToZG"))         {xsec = 1000 * 1000 * HToZG * 0.831 ; tot = 299978;}
-        if(file.Contains("WminusH_HToZG"))        {xsec = 1000 * 1000 * HToZG * 0.527 ; tot = 299276;}
-        if(file.Contains("ZH_HToZG"))             {xsec = 1000 * 1000 * HToZG * 0.8839; tot = 297389;}
-        if(file.Contains("ttHToZG"))              {xsec = 1000 * 1000 * HToZG * 0.5071; tot = 200000;}
-        w = xsec * 41.5 * sign/tot;
-
-
-      }
-      return w;
-    });
-
-
 
   //Set up plot maker
   string tag;
@@ -872,24 +823,13 @@ int main() {
 			      .LogMinimum(1)
 			      .CanvasWidth(600)
 			      .LabelSize(0.04)
-			      .YAxis(YAxisType::log)
+			      .YAxis(YAxisType::linear)
 			      .Title(TitleType::info)};
-
-  vector<PlotOpt> bkg_hist_lin = {style().Stack(StackType::data_norm)
-                              .LogMinimum(1)
-                              .CanvasWidth(600)
-                              .LabelSize(0.04)
-                              .YAxis(YAxisType::linear)
-                              .Title(TitleType::info)};
   PlotMaker pm;
   tag = "Nano_";
   vector<string> lepton ={"ele_", "muon_"};
-  for (int i(0); i<1; i++){
-    //    pm.Push<Hist1D>(Axis(80,100,180, mllg[i],    "m_{ll#gamma}"      ,{}), selection_nos.at(i), stitch, op_per).Weight(weight).Tag(tag + "stitch_comp_" + lepton[i]);  
-    //pm.Push<Hist1D>(Axis(80,-0.6,1, photon_mva,    "MVA"      ,{}), selection_nos.at(i) && photon_mva > -0.4, stitchcom, ops2).Weight(weight_1).Tag(tag + "stitch_compmva_" + lepton[i]);
-    //pm.Push<Hist1D>(Axis(80,100,180, mllg[i],    "m_{ll#gamma}"      ,{}), nel>=2 && nph>=1 && el_pt_cut, stitch, ops2).Weight(weight).Tag(tag + "weight_" + lepton[i]);
-    //pm.Push<Hist1D>(Axis(80,100,180, mllg[i],    "m_{ll#gamma}"      ,{}), nel>=2 && nph>=1 && el_pt_cut, stitch, ops2).Weight(weight_1).Tag(tag + "weight1_" + lepton[i]);
-    //pm.Push<Hist1D>(Axis(90,10,100, photon_cone,    "no mom photon pt"      ,{}), nel>=2 && nph>=1 && ele_mll>50 && ele_mllg >100 && ele_mllg<180 && stitch_cut && mother_pdgid==-2, stitch, ops2).Weight(weight_1).Tag(tag + "stitch_nomom_ele_");
+  for (int i(0); i<2; i++){
+  //pm.Push<Hist1D>(Axis(90,10,100, photon_cone,    "no mom photon pt"      ,{}), nel>=2 && nph>=1 && ele_mll>50 && ele_mllg >100 && ele_mllg<180 && stitch_cut && mother_pdgid==-2, stitch, ops2).Weight(weight_1).Tag(tag + "stitch_nomom_ele_");
   //pm.Push<Hist1D>(Axis(90,10,100, photon_cone,    "no mom photon pt"      ,{}), nmu>=2 && nph>=1 && muon_mll>50 && muon_mllg >100 && muon_mllg<180 && stitch_cut && mother_pdgid==-2,stitch, ops2).Weight(weight_1).Tag(tag + "stitch_nomom_muon_");
   /*pm.Push<Hist1D>(Axis(41,-1,40, pdgid,    "Photon PDG ID"      ,{}), nel>=2 && nph>=1 && ele_mll>50 && stitch_cut_more, stitch, ops2).Weight(weight_1).Tag(tag + "stitch_more_pdg_ele_");
   pm.Push<Hist1D>(Axis(41,-2,40, pdgid,    "Photon PDG ID"      ,{}), nmu>=2 && nph>=1 && muon_mll>50 && stitch_cut_more,stitch, ops2).Weight(weight_1).Tag(tag + "stitch_more_pdg_muon_");
@@ -1011,7 +951,7 @@ int main() {
           TableRow("LastCopy", selection.at(i) && photon_flags13 && mother_pdgid==-2,0,0,weight_1),
           TableRow("LastCopyBeforeFSR", selection.at(i) && photon_flags14 && mother_pdgid==-2,0,0,weight_1)}, stitch, false);
 */
-/*    pm.Push<Table>("Stitch_pdgid_" + lepton[i], vector<TableRow>{
+    /* pm.Push<Table>("Stitch_pdgid_" + lepton[i], vector<TableRow>{
 	TableRow("Total", selection.at(i),0,0,weight_1),
 	  TableRow("No truth information", selection.at(i) && pdgid == -1,0,0,weight_1),
 	  TableRow("Quarks", selection.at(i) && pdgid >= 1 && pdgid <= 8,0,0,weight_1),
@@ -1020,8 +960,8 @@ int main() {
 	  TableRow("Photon", selection.at(i) && pdgid == 22,0,0,weight_1),
 	  TableRow("Pions 0", selection.at(i) && pdgid == 111,0,0,weight_1),
 	  TableRow("Pions +/-", selection.at(i) && pdgid == 211,0,0,weight_1)},stitch, false);
-    
-        pm.Push<Table>("Stitch_mpdgid_quarks_" + lepton[i], vector<TableRow>{
+    */
+    /*    pm.Push<Table>("Stitch_mpdgid_quarks_" + lepton[i], vector<TableRow>{
 	TableRow("Total", selection.at(i) && pdgid >= 1 && pdgid <= 8,0,0,weight_1),
 	TableRow("No mother information", selection.at(i) && pdgid >= 1 && pdgid <= 8 && mother_pdgid == -2,0,0,weight_1),
           TableRow("Quarks", selection.at(i) && pdgid >= 1 && pdgid <= 8 && mother_pdgid >= 1 && mother_pdgid <= 8,0,0,weight_1),
@@ -1031,7 +971,8 @@ int main() {
           TableRow("Gluon", selection.at(i) && pdgid >= 1 && pdgid <= 8 && mother_pdgid == 21,0,0,weight_1),
           TableRow("Z", selection.at(i) && pdgid >= 1 && pdgid <= 8 && mother_pdgid == 23,0,0,weight_1),
           TableRow("Pions 0", selection.at(i) && pdgid >= 1 && pdgid <= 8 && mother_pdgid == 111,0,0,weight_1),
-	  TableRow("Others(including pions)", selection.at(i) && pdgid >= 1 && pdgid <= 8 && mother_pdgid >= 40,0,0,weight_1)},stitch, false);
+          TableRow("Pions +/-", selection.at(i) && pdgid >= 1 && pdgid <= 8 && mother_pdgid == 211,0,0,weight_1),
+          TableRow("Others(including pions)", selection.at(i) && pdgid >= 1 && pdgid <= 8 && mother_pdgid >= 40,0,0,weight_1)},stitch, false);
    
     pm.Push<Table>("Stitch_mpdgid_electron_" + lepton[i], vector<TableRow>{
         TableRow("Total", selection.at(i) &&  pdgid == 11,0,0,weight_1),
@@ -1043,7 +984,8 @@ int main() {
           TableRow("Gluon", selection.at(i) && pdgid == 11 && mother_pdgid == 21,0,0,weight_1),
           TableRow("Z", selection.at(i) && pdgid == 11 && mother_pdgid == 23,0,0,weight_1),
           TableRow("Pions 0", selection.at(i) && pdgid == 11 && mother_pdgid == 111,0,0,weight_1),
-	  TableRow("Others(including pions)", selection.at(i) && pdgid == 11 && mother_pdgid >= 40,0,0,weight_1)},stitch, false);
+          TableRow("Pions +/-", selection.at(i) && pdgid == 11 && mother_pdgid == 211,0,0,weight_1),
+          TableRow("Others(including pions)", selection.at(i) && pdgid == 11 && mother_pdgid >= 40,0,0,weight_1)},stitch, false);
     
     pm.Push<Table>("Stitch_mpdgid_photon_" + lepton[i], vector<TableRow>{
         TableRow("Total", selection.at(i) &&  pdgid == 22,0,0,weight_1),
@@ -1055,7 +997,8 @@ int main() {
           TableRow("Gluon", selection.at(i) && pdgid == 22 && mother_pdgid == 21,0,0,weight_1),
           TableRow("Z", selection.at(i) && pdgid == 22 && mother_pdgid == 23,0,0,weight_1),
           TableRow("Pions 0", selection.at(i) && pdgid == 22 && mother_pdgid == 111,0,0,weight_1),
-	  TableRow("Others(including pions)", selection.at(i) && pdgid == 22 && mother_pdgid >= 40,0,0,weight_1)},stitch, false);
+          TableRow("Pions +/-", selection.at(i) && pdgid == 22 && mother_pdgid == 211,0,0,weight_1),
+          TableRow("Others(including pions)", selection.at(i) && pdgid == 22 && mother_pdgid >= 40,0,0,weight_1)},stitch, false);
    
     pm.Push<Table>("Stitch_mpdgid_p0_" + lepton[i], vector<TableRow>{
         TableRow("Total", selection.at(i) &&  pdgid == 111,0,0,weight_1),
@@ -1067,9 +1010,10 @@ int main() {
           TableRow("Gluon", selection.at(i) && pdgid == 111 && mother_pdgid == 21,0,0,weight_1),
           TableRow("Z", selection.at(i) && pdgid == 111 && mother_pdgid == 23,0,0,weight_1),
           TableRow("Pions 0", selection.at(i) && pdgid == 111 && mother_pdgid == 111,0,0,weight_1),
-	  TableRow("Others(including pions)", selection.at(i) && pdgid == 111 && mother_pdgid >= 40,0,0,weight_1)},stitch, false);
-*/ 
-    /* pm.Push<Table>("Stitch_mpdgid_ppm_" + lepton[i], vector<TableRow>{
+          TableRow("Pions +/-", selection.at(i) && pdgid == 111 && mother_pdgid == 211,0,0,weight_1),
+          TableRow("Others(including pions)", selection.at(i) && pdgid == 111 && mother_pdgid >= 40,0,0,weight_1)},stitch, false);
+   
+    pm.Push<Table>("Stitch_mpdgid_ppm_" + lepton[i], vector<TableRow>{
         TableRow("Total", selection.at(i) &&  pdgid == 211,0,0,weight_1),
           TableRow("No mother information", selection.at(i) && pdgid == 211 && mother_pdgid == -2,0,0,weight_1),
           TableRow("Quarks", selection.at(i) && pdgid == 211 && mother_pdgid >= 1 && mother_pdgid <= 8,0,0,weight_1),
@@ -1175,7 +1119,6 @@ int main() {
     // pm.Push<Hist1D>(Axis(40,0,40, dRchecklead_pdg,    "PDG ID"      ,{}), selection_dR.at(i) && dRcheck_lead <= 0.05, sm, ops2).Weight(weight_1).Tag(tag + "sm_005pdg_" + lepton[i]);
     //pm.Push<Hist1D>(Axis(50,0,0.5, dRcheck_lead,    "mindR"      ,{}), selection_dR.at(i) && dRcheck_cut && dRcheck_lead <= 0.5, stitch, ops2).Weight(weight_1).Tag(tag + "stitch_mindR_" );
     //pm.Push<Hist1D>(Axis(40,0,40, dRchecklead_pdg,    "PDG ID"      ,{}), selection_dR.at(i) && dRcheck_cut && dRcheck_lead <= 0.5, stitch, ops2).Weight(weight_1).Tag(tag + "stitch_pdg_" );
-    //pm.Push<Hist1D>(Axis(50,50,150, mllg[i],    "m_{ll#gamma}"      ,{}), nel>=2 && nph>=1 && el_pt_cut && , stitch, ops2).Weight(weight_1).Tag(tag + "mllg_" + lepton[i] );
     //pm.Push<Hist1D>(Axis(100,0,100, dRcheck_photonpT,    "Truth Photon pT"      ,{}), selection_dR.at(i) && dRcheck > 0.01, sm, ops2).Weight(weight_1).Tag(tag + "sm_lppT_" + lepton[i]);
     /*pm.Push<Table>("SM_dRpdgid_" + lepton[i], vector<TableRow>{
         TableRow("Total", selection_dR.at(i),0,0,weight_1),
@@ -1217,23 +1160,12 @@ int main() {
 	  TableRow("PU > 50", selection.at(i) && npileup > 50,0,0,weight_1),
 	  TableRow("PU > 50 No truth info", selection.at(i) && pdgid == -1 && npileup > 50,0,0,weight_1)},stitch, false);
     */
-   
-    pm.Push<Hist2D>(
-                    Axis(100,15,80, photon_pt,      "Photon pT [GeV]",{}),
-                    Axis(100,0.1,1.1,     mindR_v, "min dR SMZ#gamma",{}), 
-                    selection_nos[i], sm, bkg_hist).Tag(tag + "mindR_sm_" + lepton[i]).Weight(weight_1);
-    //pm.Push<Hist2D>(
-    //              Axis(100,15,80, photon_pt,      "Photon pT [GeV]",{}),
-    //              Axis(100,0.1,1.1,     mindR_v, "min dR DY",{}),
-    //              selection[i], dy, bkg_hist).Tag(tag + "mindR_dy_" + lepton[i]).Weight(weight_1);
-    pm.Push<Hist2D>(
-                    Axis(100,15,80, photon_pt,      "Photon pT [GeV]",{}),
-                    Axis(100,0.1,1.1,     mindR_v, "min dR GGF Sig",{}),
-                    selection_nos[i], ggf, bkg_hist_lin).Tag(tag + "mindR_ggf_" + lepton[i]).Weight(weight_1);
+    pm.Push<Hist1D>(Axis(100,50,150, mll[i], "m_{ll}",{}), selection1[i] && mll[i] >= 50. && mll[i] <= 150., procs, ops2).Weight(weight_11).Tag("CR_1_mll_"+lepton[i]);
+    pm.Push<Hist1D>(Axis(80,100,180, mllg[i], "m_{ll#gamma}",{}), selection1[i] && mllg[i] >= 100. && mllg[i] <= 180., procs, ops2).Weight(weight_11).Tag("CR_1_mllg_"+lepton[i]);
+    pm.Push<Hist1D>(Axis(100,50,150, mll[i], "m_{ll}",{}), selection2[i] && mll[i] >= 50. && mll[i] <= 150., procs, ops2).Weight(weight_11).Tag("CR_2_mll_"+lepton[i]);
+    pm.Push<Hist1D>(Axis(80,100,180, mllg[i], "m_{ll#gamma}",{}), selection2[i] && mllg[i] >= 100. && mllg[i] <= 180., procs, ops2).Weight(weight_11).Tag("CR_2_mllg_"+lepton[i]);
   }
-  //pm.Push<Hist1D>(Axis(50,0,0.5, dRcheck_lead,    "mindR"      ,{}), dRcheck_cut && dRcheck_lead <= 0.5, stitch, ops2).Weight(weight_1).Tag(tag + "stitch_bare_" );
-  //pm.Push<Hist1D>(Axis(40,0,40, dRchecklead_pdg,    "PDG ID"      ,{}), dRcheck_cut && dRcheck_lead <= 0.5, stitch, ops2).Weight(weight_1).Tag(tag + "stitch_bare_pdg_");
-  //pm.Push<Hist1D>(Axis(100,50,150, mllg[0],    "m_{ll#gamma}"      ,{}), nel>=2 && nph>=1 && ele_mll_more>50 && el_pt_cut && mllg[0] < 150 && mllg[0] > 50, sm, ops2).Weight(weight_1).Tag(tag + "mllg_" + lepton[0] );
+  
   pm.min_print_ = true;
   pm.MakePlots(1);
 }

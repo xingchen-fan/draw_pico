@@ -1,5 +1,5 @@
-#ifndef XC_FUNC
-#define XC_FUNC
+#ifndef XC_FUNC_NOdR
+#define XC_FUNC_NOdR
 
 #include <algorithm>
 #include <bitset>

@@ -66,14 +66,14 @@ int main() {
   PlotOpt log_lumi("txt/plot_styles.txt","CMSPaper");
   log_lumi.Title(TitleType::info)
           .YAxis(YAxisType::log)
-          .Stack(StackType::signal_overlay)
+          .Stack(StackType::shapes)
           .YTitleOffset(1.)
           .AutoYAxis(false)
           .UseCMYK(false)
           .LeftMargin(0.17)
           .LegendColumns(1)
           .FileExtensions({"pdf"});
-  PlotOpt lin_lumi = log_lumi().YAxis(YAxisType::linear).Stack(StackType::signal_overlay).Overflow(OverflowType::none);
+  PlotOpt lin_lumi = log_lumi().YAxis(YAxisType::linear).Stack(StackType::signal_overlay);;
   vector<PlotOpt> ops = {lin_lumi};
 
   const NamedFunc nmu("nmu",fnmu);
@@ -112,7 +112,7 @@ int main() {
   const NamedFunc photon_flags13("photon_flags13", fphoton_flags13);
   const NamedFunc photon_flags14("photon_flags14", fphoton_flags14);
   const NamedFunc photon_cone("photon_cone", fphoton_cone);
-  const NamedFunc mindR_V("mindR_v", fmindR);
+
   NamedFunc el_pt_cut ("el_pt_cut", [](const Baby &b) -> NamedFunc::ScalarType{
       std::vector<double> el_sig_ = fel_sig(b);
       int num1 = 0;
@@ -148,7 +148,7 @@ int main() {
       }
       return pt;
     });
-  
+
   NamedFunc stitch_cut ("stitch_cut", [](const Baby &b) -> NamedFunc::ScalarType{
       TVector3 genPhoton, genPart;
       for (int imc(0); imc<b.nGenPart(); ++imc) {
@@ -179,14 +179,13 @@ int main() {
       }
       return true;
     });
-  
-  NamedFunc selection_el = nel>=2 && nph>=1 && el_pt_cut && ele_mll_more>50 && ele_mllg_more >100 && ele_mllg_more <180 && (ele_mllg_more + ele_mll_more) > 185 && photon_pt/ele_mllg_more >(15./110);
-  NamedFunc selection_mu = nmu>=2 && nph>=1 && mu_pt_cut && muon_mll_more>50 && muon_mllg_more >100 && muon_mllg_more < 180 && (muon_mllg_more + muon_mll_more) > 185 && photon_pt/muon_mllg_more > (15./110);
+
+
   NamedFunc selection_el_1 = nel>=2 && nph>=1 && el_pt_cut && ele_mll_more>50 && ele_mllg_more >50 && ele_mllg_more <100 /*&& (ele_mllg_more + ele_mll_more) > 185*/ && photon_pt/ele_mllg_more >(15./110);
   NamedFunc selection_mu_1 = nmu>=2 && nph>=1 && mu_pt_cut && muon_mll_more>50 && muon_mllg_more >50 && muon_mllg_more < 100 /*&& (muon_mllg_more + muon_mll_more) > 185*/ && photon_pt/muon_mllg_more > (15./110);
-  NamedFunc selection_el_2 = nel>=2 && nph>=1 && el_pt_cut && ele_mll_more>50 && ele_mllg_more >100 && ele_mllg_more <180 && /*(ele_mllg_more + ele_mll_more) > 185 &&*/ photon_pt/ele_mllg_more < (15./110);  
+  NamedFunc selection_el_2 = nel>=2 && nph>=1 && el_pt_cut && ele_mll_more>50 && ele_mllg_more >100 && ele_mllg_more <180 && /*(ele_mllg_more + ele_mll_more) > 185 &&*/ photon_pt/ele_mllg_more < (15./110);
+  
   NamedFunc selection_mu_2 = nmu>=2 && nph>=1 && mu_pt_cut && muon_mll_more>50 && muon_mllg_more >100 && muon_mllg_more < 180 && /*(muon_mllg_more + muon_mll_more) > 185 &&*/ photon_pt/muon_mllg_more < (15./110);
-  vector<NamedFunc> selection = {selection_el, selection_mu};
   vector<NamedFunc> selection1 = {selection_el_1, selection_mu_1};
   vector<NamedFunc> selection2 = {selection_el_2, selection_mu_2};
   vector<NamedFunc> mll = {ele_mll_more, muon_mll_more};
@@ -264,10 +263,10 @@ int main() {
       return ind;
     });
 
-  auto proc_smzg  = Process::MakeShared<Baby_nano>("SM Z#gamma",       sig,
-						 TColor::GetColor("#16bac5"),{mc_path+"*ZGToLLG_*"}, trigs /*&& !stitch_cut*/);
+  auto proc_smzg  = Process::MakeShared<Baby_nano>("SM Z#gamma",       back,
+						   TColor::GetColor("#16bac5"),{mc_path+"*ZGToLLG_*"}, trigs && !stitch_cut);
   //auto proc_ewkzg = Process::MakeShared<Baby_nano>("EWK Z#gamma",      back,						   TColor::GetColor("#39a9df"),{mc_path+"*LLAJJ*"},   trigs);
-  auto proc_dy    = Process::MakeShared<Baby_nano>("DY + Jets",               sig,
+  auto proc_dy    = Process::MakeShared<Baby_nano>("DY + Jets",               back,
 						   TColor::GetColor("#ffb400"),{mc_path+"*DYJetsToLL_M-50*"}, trigs && stitch_cut);
   //auto proc_dy_nos= Process::MakeShared<Baby_pico>("DY",               back,						   TColor::GetColor("#ffb400"),{mc_path+"*DYJets*"},  trigs);
   //auto proc_ttg   = Process::MakeShared<Baby_pico>("ttbar",            back,						   TColor::GetColor("#ED702D"),{mc_path+"*TT_Tune*"}, trigs);
@@ -284,7 +283,7 @@ int main() {
   //proc_dy_nos->SetLineWidth(1);
   //proc_hzg_gg->SetLineWidth(4);
   //proc_hzg_vbf->SetLineWidth(4);
-  vector<shared_ptr<Process>> procs = {proc_dy, proc_smzg};
+  vector<shared_ptr<Process>> procs = {proc_dy, proc_smzg, proc_hzg};
   vector<shared_ptr<Process>> procssig = {proc_hzg};
   //vector<shared_ptr<Process>> procsbkg = {proc_dy, proc_smzg,proc_ewkzg,proc_ttg};
 
@@ -301,8 +300,8 @@ int main() {
   vector<shared_ptr<Process>> procs_total = {proc_dy_total, proc_smzg_total, proc_hzg_total};
   vector<shared_ptr<Process>> proc_sm_tot = {proc_smzg_total};
   
-PlotOpt style("txt/plot_styles.txt","Scatter");
-vector<PlotOpt> bkg_hist = {style().Stack(StackType::shapes)//data_norm)
+  PlotOpt style("txt/plot_styles.txt","Scatter");
+  vector<PlotOpt> bkg_hist = {style().Stack(StackType::data_norm)
 			      .LogMinimum(1)
 			      .CanvasWidth(600)
 			      .LabelSize(0.04)
@@ -312,11 +311,9 @@ vector<PlotOpt> bkg_hist = {style().Stack(StackType::shapes)//data_norm)
   vector<string> lepton = {"electron", "muon"};
   for(int i(0); i < 1; i++) {
     //pm.Push<Hist1D>(Axis(100,50,150, mll[i], "m_{ll}",{}), selection1[i] && mll[i] > 50 && mll[i] < 150, procs, ops).Weight(weight).Tag("CR_1_mll_"+lepton[i]);
-    pm.Push<Hist1D>(Axis(80,100,180, mllg[i], "m_{ll#gamma}",{}), selection[i], procs, ops).Weight(weight).Tag("Comp_mllg_"+lepton[i]);
+    pm.Push<Hist1D>(Axis(50,50,100, mllg[i], "m_{ll#gamma}",{}), selection1[i] && mllg[i] > 50 && mllg[i] < 100, procs, ops).Weight(weight).Tag("CR_1_mllg_"+lepton[i]);
     //pm.Push<Hist1D>(Axis(100,50,150, mll[i], "m_{ll}",{}), selection2[i] && mll[i] > 50 && mll[i] < 150, procs, ops).Weight(weight).Tag("CR_2_mll_"+lepton[i]);
-    //pm.Push<Hist1D>(Axis(80,100,180, mllg[i], "m_{ll#gamma}",{}), selection2[i] && mllg[i] > 100 && mllg[i] < 180, procs, ops).Weight(weight).Tag("CR_2_mllg_"+lepton[i]);
-    pm.Push<Hist1D>(Axis(100,0,4, mindR_V, "min dR",{}), selection1[i], procs, ops).Weight(weight).Tag("CR_1_mindR_"+lepton[i]);
-    pm.Push<Hist1D>(Axis(100,0,4, mindR_V, "min dR",{}), selection2[i], procs, ops).Weight(weight).Tag("CR_2_mindR_"+lepton[i]);
+    pm.Push<Hist1D>(Axis(80,100,180, mllg[i], "m_{ll#gamma}",{}), selection2[i] && mllg[i] > 100 && mllg[i] < 180, procs, ops).Weight(weight).Tag("CR_2_mllg_"+lepton[i]);
     //pm.Push<Hist1D>(Axis(150,50,200, "llphoton_m[0]", "m_{ll#gamma} [GeV]",{}), selection && zoom && !(ratio_cut), procs, ops).Weight(wgt).Tag("Ratio");
     //pm.Push<Hist2D>(Axis(115,0,115, "photon_pt[0]",       "#gamma P_{t} [GeV]",{}),
     //		    selection && zoom, procssig).Weight(wgt).Tag("sig");

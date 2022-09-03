@@ -1,6 +1,3 @@
-#include <algorithm>
-#include <bitset>
-#include <cstdlib>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -8,13 +5,9 @@
 #include <bitset>
 #include <unistd.h>
 #include <getopt.h>
-#include <cmath>
-#include "Math/Vector4D.h"
 #include "TError.h"
 #include "TColor.h"
 #include "TVector3.h"
-#include "TMVA/Reader.h"
-#include "TMVA/Configurable.h"
 #include "TLorentzVector.h"
 #include "core/baby.hpp"
 #include "core/process.hpp"
@@ -22,12 +15,12 @@
 #include "core/plot_maker.hpp"
 #include "core/plot_opt.hpp"
 #include "core/palette.hpp"
+#include "core/hist2d.hpp"
 #include "core/table.hpp"
 #include "core/hist1d.hpp"
-#include "core/hist2d.hpp"
 #include "core/utilities.hpp"
-#include "core/xingchen.hpp"
 #include "zgamma/zg_utilities.hpp"
+#include "core/xingchenCR_MVA.hpp"
 
 using namespace std;
 using namespace PlotOptTypes;
@@ -66,14 +59,14 @@ int main() {
   PlotOpt log_lumi("txt/plot_styles.txt","CMSPaper");
   log_lumi.Title(TitleType::info)
           .YAxis(YAxisType::log)
-          .Stack(StackType::signal_overlay)
+          .Stack(StackType::shapes)
           .YTitleOffset(1.)
           .AutoYAxis(false)
           .UseCMYK(false)
           .LeftMargin(0.17)
           .LegendColumns(1)
           .FileExtensions({"pdf"});
-  PlotOpt lin_lumi = log_lumi().YAxis(YAxisType::linear).Stack(StackType::signal_overlay).Overflow(OverflowType::none);
+  PlotOpt lin_lumi = log_lumi().YAxis(YAxisType::linear).Stack(StackType::signal_overlay);;
   vector<PlotOpt> ops = {lin_lumi};
 
   const NamedFunc nmu("nmu",fnmu);
@@ -112,7 +105,7 @@ int main() {
   const NamedFunc photon_flags13("photon_flags13", fphoton_flags13);
   const NamedFunc photon_flags14("photon_flags14", fphoton_flags14);
   const NamedFunc photon_cone("photon_cone", fphoton_cone);
-  const NamedFunc mindR_V("mindR_v", fmindR);
+
   NamedFunc el_pt_cut ("el_pt_cut", [](const Baby &b) -> NamedFunc::ScalarType{
       std::vector<double> el_sig_ = fel_sig(b);
       int num1 = 0;
@@ -148,7 +141,7 @@ int main() {
       }
       return pt;
     });
-  
+
   NamedFunc stitch_cut ("stitch_cut", [](const Baby &b) -> NamedFunc::ScalarType{
       TVector3 genPhoton, genPart;
       for (int imc(0); imc<b.nGenPart(); ++imc) {
@@ -179,16 +172,11 @@ int main() {
       }
       return true;
     });
-  
-  NamedFunc selection_el = nel>=2 && nph>=1 && el_pt_cut && ele_mll_more>50 && ele_mllg_more >100 && ele_mllg_more <180 && (ele_mllg_more + ele_mll_more) > 185 && photon_pt/ele_mllg_more >(15./110);
-  NamedFunc selection_mu = nmu>=2 && nph>=1 && mu_pt_cut && muon_mll_more>50 && muon_mllg_more >100 && muon_mllg_more < 180 && (muon_mllg_more + muon_mll_more) > 185 && photon_pt/muon_mllg_more > (15./110);
-  NamedFunc selection_el_1 = nel>=2 && nph>=1 && el_pt_cut && ele_mll_more>50 && ele_mllg_more >50 && ele_mllg_more <100 /*&& (ele_mllg_more + ele_mll_more) > 185*/ && photon_pt/ele_mllg_more >(15./110);
-  NamedFunc selection_mu_1 = nmu>=2 && nph>=1 && mu_pt_cut && muon_mll_more>50 && muon_mllg_more >50 && muon_mllg_more < 100 /*&& (muon_mllg_more + muon_mll_more) > 185*/ && photon_pt/muon_mllg_more > (15./110);
-  NamedFunc selection_el_2 = nel>=2 && nph>=1 && el_pt_cut && ele_mll_more>50 && ele_mllg_more >100 && ele_mllg_more <180 && /*(ele_mllg_more + ele_mll_more) > 185 &&*/ photon_pt/ele_mllg_more < (15./110);  
-  NamedFunc selection_mu_2 = nmu>=2 && nph>=1 && mu_pt_cut && muon_mll_more>50 && muon_mllg_more >100 && muon_mllg_more < 180 && /*(muon_mllg_more + muon_mll_more) > 185 &&*/ photon_pt/muon_mllg_more < (15./110);
+
+
+  NamedFunc selection_el = nel>=2 && nph>=1 && el_pt_cut && ele_mll_more>50 && ele_mllg_more >100 && ele_mllg_more <180 && /*(ele_mllg_more + ele_mll_more) > 185 &&*/ photon_pt/ele_mllg_more >(15./110);
+  NamedFunc selection_mu = nmu>=2 && nph>=1 && mu_pt_cut && muon_mll_more>50 && muon_mllg_more >100 && muon_mllg_more < 180 && /*(muon_mllg_more + muon_mll_more) > 185 &&*/ photon_pt/muon_mllg_more > (15./110);
   vector<NamedFunc> selection = {selection_el, selection_mu};
-  vector<NamedFunc> selection1 = {selection_el_1, selection_mu_1};
-  vector<NamedFunc> selection2 = {selection_el_2, selection_mu_2};
   vector<NamedFunc> mll = {ele_mll_more, muon_mll_more};
   vector<NamedFunc> mllg = {ele_mllg_more, muon_mllg_more};
 
@@ -200,22 +188,12 @@ int main() {
       return weight/1.664;
     return        weight;
   });
-
   const NamedFunc weight_1("weight_1",[](const Baby &b) -> NamedFunc::ScalarType{
       float w = 1.0;
-      std::set<std::string> names = b.FileNames();
-      std::set<std::string>::iterator it;
-      for (it = names.begin(); it != names.end(); it++){
-	TString name = *it;
-	if(name.Contains("GluGluHToZG")||name.Contains("ttHToZG")||name.Contains("VBFHToZG")||name.Contains("WminusH")||name.Contains("WplusH")||name.Contains("ZH_HToZG_ZToAll")){
-	  w = 1.;
-	  break;
-	}
-	else w = 1.0;
-      }
-      return w;
+      if (b.Generator_weight()<0) return w;
+      else return w;
     });
-  
+
   const NamedFunc weight("weight",[](const Baby &b) -> NamedFunc::ScalarType{
       float w = 1.0;
       float xsec = -999.;
@@ -226,83 +204,57 @@ int main() {
       std::set<std::string>::iterator it;
       for (it = names.begin(); it != names.end(); it++){
         TString file = *it;
-	if(file.Contains("ZGToLLG")) {  xsec = 1000 * 55.48; tot = 18727540;}
-	if(file.Contains("DYJetsToLL_M-50_TuneCP5")) {xsec = 1000 * 6077.22; tot = 102486448;}
+        if(file.Contains("ZGToLLG")) {  xsec = 1000 * 55.48; tot = 18727540;}
+        if(file.Contains("DYJetsToLL_M-50_TuneCP5")) {xsec = 1000 * 6077.22; tot = 102486448;}
 
-	if(file.Contains("GluGluHToZG"))          {xsec = 1000 * 1000 * HToZG * ZToLL * 48.58 ; tot = 395990;}
-	if(file.Contains("VBFHToZG"))             {xsec = 1000 * 1000 * HToZG * ZToLL * 3.782 ; tot = 199732;}
-	if(file.Contains("WplusH_HToZG"))         {xsec = 1000 * 1000 * HToZG * 0.831 ; tot = 282330;}
-	if(file.Contains("WminusH_HToZG"))        {xsec = 1000 * 1000 * HToZG * 0.527 ; tot = 283432;}
-	if(file.Contains("ZH_HToZG"))             {xsec = 1000 * 1000 * HToZG * 0.8839; tot = 279837;}
-	if(file.Contains("ttHToZG"))              {xsec = 1000 * 1000 * HToZG * 0.5071; tot = 195782;}
-	w = xsec * 41.5 * sign/tot;
-	
+        if(file.Contains("GluGluHToZG"))          {xsec = 1000 * 1000 * HToZG * ZToLL * 48.58 ; tot = 395990;}
+        if(file.Contains("VBFHToZG"))             {xsec = 1000 * 1000 * HToZG * ZToLL * 3.782 ; tot = 199732;}
+        if(file.Contains("WplusH_HToZG"))         {xsec = 1000 * 1000 * HToZG * 0.831 ; tot = 282330;}
+        if(file.Contains("WminusH_HToZG"))        {xsec = 1000 * 1000 * HToZG * 0.527 ; tot = 283432;}
+        if(file.Contains("ZH_HToZG"))             {xsec = 1000 * 1000 * HToZG * 0.8839; tot = 279837;}
+        if(file.Contains("ttHToZG"))              {xsec = 1000 * 1000 * HToZG * 0.5071; tot = 195782;}
+        w = xsec * 41.5 * sign/tot;
+
 
       }
       return w;
     });
 
-  const NamedFunc total_finder("total_finder",[](const Baby &b) -> NamedFunc::ScalarType{
-      double ind = 0.;
-     
-      std::set<std::string> names = b.FileNames();
-      std::set<std::string>::iterator it;
-      for (it = names.begin(); it != names.end(); it++){
-        TString file = *it;
-        if(file.Contains("ZGToLLG")) {ind = 1.;}
-        if(file.Contains("DYJetsToLL_M-50_TuneCP5")) {ind = 2.;}
-
-        if(file.Contains("GluGluHToZG"))         ind = 3.;
-        if(file.Contains("VBFHToZG"))           ind = 4.;
-        if(file.Contains("WplusH_HToZG"))        ind = 5.;
-        if(file.Contains("WminusH_HToZG"))       ind = 6.;
-        if(file.Contains("ZH_HToZG"))            ind = 7.;
-        if(file.Contains("ZH_ZToAll_HToZG"))     ind = 8.;
-        if(file.Contains("ttHToZG"))             ind = 9.;
-
-      }
-      return ind;
-    });
-
-  auto proc_smzg  = Process::MakeShared<Baby_nano>("SM Z#gamma",       sig,
-						 TColor::GetColor("#16bac5"),{mc_path+"*ZGToLLG_*"}, trigs /*&& !stitch_cut*/);
-  //auto proc_ewkzg = Process::MakeShared<Baby_nano>("EWK Z#gamma",      back,						   TColor::GetColor("#39a9df"),{mc_path+"*LLAJJ*"},   trigs);
-  auto proc_dy    = Process::MakeShared<Baby_nano>("DY + Jets",               sig,
+  auto proc_smzg  = Process::MakeShared<Baby_nano>("SM Z#gamma",       back,
+						   TColor::GetColor("#16bac5"),{mc_path+"*ZGToLLG_*"}, trigs && !stitch_cut);
+  auto proc_ewkzg = Process::MakeShared<Baby_pico>("EWK Z#gamma",      back,
+						   TColor::GetColor("#39a9df"),{mc_path+"*LLAJJ*"},   trigs);
+  auto proc_dy    = Process::MakeShared<Baby_nano>("DY + Jets",               back,
 						   TColor::GetColor("#ffb400"),{mc_path+"*DYJetsToLL_M-50*"}, trigs && stitch_cut);
-  //auto proc_dy_nos= Process::MakeShared<Baby_pico>("DY",               back,						   TColor::GetColor("#ffb400"),{mc_path+"*DYJets*"},  trigs);
-  //auto proc_ttg   = Process::MakeShared<Baby_pico>("ttbar",            back,						   TColor::GetColor("#ED702D"),{mc_path+"*TT_Tune*"}, trigs);
-  auto proc_hzg   = Process::MakeShared<Baby_nano>("HToZ#gamma (X1000)", sig,
-						   kRed                      ,{sig_path+"*.root"},    trigs );
-  //auto proc_hzg_vbf = Process::MakeShared<Baby_pico>("HToZ#gamma VBF(x1000)", sig,						     kMagenta                   ,{sig_path+"*VBF*.root"},   trigs);
-  //auto proc_hzg_gg  = Process::MakeShared<Baby_pico>("HToZ#gamma ggF(x1000)", sig,						     kBlue ,{sig_path+"*GluGlu*.root"},   trigs);
-  //auto raw_proc_dy    = Process::MakeShared<Baby_pico>("DY",               back,						       TColor::GetColor("#ffb400"),{rawpico + "*DYJetsToLL*"}, "1");
+  auto proc_dy_nos= Process::MakeShared<Baby_pico>("DY",               back,
+						   TColor::GetColor("#ffb400"),{mc_path+"*DYJets*"},  trigs);
+  auto proc_ttg   = Process::MakeShared<Baby_pico>("ttbar",            back,
+						   TColor::GetColor("#ED702D"),{mc_path+"*TT_Tune*"}, trigs);
+  auto proc_hzg   = Process::MakeShared<Baby_nano>("HToZ#gamma", sig,
+						   kRed                      ,{sig_path+"*.root"},   trigs);
+  auto proc_hzg_vbf = Process::MakeShared<Baby_pico>("HToZ#gamma VBF(x1000)", sig,
+						     kMagenta                   ,{sig_path+"*VBF*.root"},   trigs);
+  auto proc_hzg_gg  = Process::MakeShared<Baby_pico>("HToZ#gamma ggF(x1000)", sig,
+						     kBlue ,{sig_path+"*GluGlu*.root"},   trigs);
+  auto raw_proc_dy    = Process::MakeShared<Baby_pico>("DY",               back,
+						       TColor::GetColor("#ffb400"),{rawpico + "*DYJetsToLL*"}, "1");
   ///net/cms17/cms17r0/pico/NanoAODv2/zgamma_mc_ul/2017/mc/raw_pico
-  //auto new_proc_dy = Process::MakeShared<Baby_pico>("DY", back, TColor::GetColor("#ffb400"),{"/homes/abarzdukas/nano2pico_test/nano2pico/out/unskimmed/*DYJetsToLL*"}, "1");
+  auto new_proc_dy = Process::MakeShared<Baby_pico>("DY", back, TColor::GetColor("#ffb400"),{"/homes/abarzdukas/nano2pico_test/nano2pico/out/unskimmed/*DYJetsToLL*"}, "1");
   proc_smzg->SetLineWidth (1); //proc_ttg->SetLineWidth  (1);
   proc_dy->SetLineWidth   (1); //proc_ewkzg->SetLineWidth(1);
   proc_hzg->SetLineWidth(4);
-  //proc_dy_nos->SetLineWidth(1);
-  //proc_hzg_gg->SetLineWidth(4);
-  //proc_hzg_vbf->SetLineWidth(4);
-  vector<shared_ptr<Process>> procs = {proc_dy, proc_smzg};
+  proc_dy_nos->SetLineWidth(1);
+  proc_hzg_gg->SetLineWidth(4);
+  proc_hzg_vbf->SetLineWidth(4);
+  vector<shared_ptr<Process>> procs = {proc_dy, proc_smzg, proc_hzg};
   vector<shared_ptr<Process>> procssig = {proc_hzg};
-  //vector<shared_ptr<Process>> procsbkg = {proc_dy, proc_smzg,proc_ewkzg,proc_ttg};
+  vector<shared_ptr<Process>> procsbkg = {proc_dy, proc_smzg,proc_ewkzg,proc_ttg};
 
   //vector<shared_ptr<Process>> theory_procs = {proc_smzg, proc_dy, proc_ewkzg, proc_hzg};
-  //vector<shared_ptr<Process>> stitch = {new_proc_dy};
+  vector<shared_ptr<Process>> stitch = {new_proc_dy};
 
-  auto proc_smzg_total  = Process::MakeShared<Baby_nano>("SM Z#gamma",       back,
-                                                   TColor::GetColor("#16bac5"),{mc_path+"*ZGToLLG_*"}, "1");
-  auto proc_dy_total    = Process::MakeShared<Baby_nano>("DY + Jets",               back,
-                                                   TColor::GetColor("#ffb400"),{mc_path+"*DYJetsToLL_M-50*"}, "1");
-  auto proc_hzg_total   = Process::MakeShared<Baby_nano>("HToZ#gamma (X100)", sig,
-                                                   kRed                      ,{sig_path+"*.root"},   "1");
-  
-  vector<shared_ptr<Process>> procs_total = {proc_dy_total, proc_smzg_total, proc_hzg_total};
-  vector<shared_ptr<Process>> proc_sm_tot = {proc_smzg_total};
-  
-PlotOpt style("txt/plot_styles.txt","Scatter");
-vector<PlotOpt> bkg_hist = {style().Stack(StackType::shapes)//data_norm)
+  PlotOpt style("txt/plot_styles.txt","Scatter");
+  vector<PlotOpt> bkg_hist = {style().Stack(StackType::data_norm)
 			      .LogMinimum(1)
 			      .CanvasWidth(600)
 			      .LabelSize(0.04)
@@ -310,13 +262,9 @@ vector<PlotOpt> bkg_hist = {style().Stack(StackType::shapes)//data_norm)
 			      .Title(TitleType::info)};
   PlotMaker pm;
   vector<string> lepton = {"electron", "muon"};
-  for(int i(0); i < 1; i++) {
-    //pm.Push<Hist1D>(Axis(100,50,150, mll[i], "m_{ll}",{}), selection1[i] && mll[i] > 50 && mll[i] < 150, procs, ops).Weight(weight).Tag("CR_1_mll_"+lepton[i]);
-    pm.Push<Hist1D>(Axis(80,100,180, mllg[i], "m_{ll#gamma}",{}), selection[i], procs, ops).Weight(weight).Tag("Comp_mllg_"+lepton[i]);
-    //pm.Push<Hist1D>(Axis(100,50,150, mll[i], "m_{ll}",{}), selection2[i] && mll[i] > 50 && mll[i] < 150, procs, ops).Weight(weight).Tag("CR_2_mll_"+lepton[i]);
-    //pm.Push<Hist1D>(Axis(80,100,180, mllg[i], "m_{ll#gamma}",{}), selection2[i] && mllg[i] > 100 && mllg[i] < 180, procs, ops).Weight(weight).Tag("CR_2_mllg_"+lepton[i]);
-    pm.Push<Hist1D>(Axis(100,0,4, mindR_V, "min dR",{}), selection1[i], procs, ops).Weight(weight).Tag("CR_1_mindR_"+lepton[i]);
-    pm.Push<Hist1D>(Axis(100,0,4, mindR_V, "min dR",{}), selection2[i], procs, ops).Weight(weight).Tag("CR_2_mindR_"+lepton[i]);
+  for(int i(0); i < 2; i++) {
+    //pm.Push<Hist1D>(Axis(100,50,150, mll[i], "m_{ll}",{}), selection[i] && mll[i] >= 50 && mll[i] <= 150, procs, ops).Weight(weight).Tag("CR_MVA_mll_"+lepton[i]);
+    pm.Push<Hist1D>(Axis(80,100,180, mllg[i], "m_{ll#gamma}",{}), selection[i] && mllg[i] >= 100 && mllg[i] <= 180, procs, ops).Weight(weight_1).Tag("CR_MVA_mllg_"+lepton[i]);
     //pm.Push<Hist1D>(Axis(150,50,200, "llphoton_m[0]", "m_{ll#gamma} [GeV]",{}), selection && zoom && !(ratio_cut), procs, ops).Weight(wgt).Tag("Ratio");
     //pm.Push<Hist2D>(Axis(115,0,115, "photon_pt[0]",       "#gamma P_{t} [GeV]",{}),
     //		    selection && zoom, procssig).Weight(wgt).Tag("sig");
@@ -359,19 +307,6 @@ vector<PlotOpt> bkg_hist = {style().Stack(StackType::shapes)//data_norm)
 	      TableRow("Basecut and stitch", "stitch_dy" && selection,0,0,weight_1)}, stitch, false);
     */
   }
-  //pm.Push<Hist1D>(Axis(400,-200,200, "Generator_weight", "Generator weight",{}), "1", proc_sm_tot, ops).Weight(weight_1).Tag("gw_");
-  /*pm.Push<Table>("Total event number", vector<TableRow>{
-      TableRow("SM Z#gamma",total_finder < 1.5 && total_finder > 0.5 ,0,0,weight_1),
-	TableRow("DY + jets",total_finder < 2.5 && total_finder > 1.5,0,0,weight_1),
-	TableRow("GluGlu",total_finder < 3.5 && total_finder > 2.5,0,0,weight_1),
-	TableRow("VBF",total_finder < 4.5 && total_finder > 3.5,0,0,weight_1),
-        TableRow("W+H",total_finder < 5.5 && total_finder > 4.5,0,0,weight_1),
-	TableRow("W-H",total_finder < 6.5 && total_finder > 5.5,0,0,weight_1),
-        TableRow("ZH_HToZG",total_finder < 7.5 && total_finder > 6.5,0,0,weight_1),
-	TableRow("ZH_HToAll",total_finder < 8.5 && total_finder > 7.5,0,0,weight_1),
-	TableRow("ttHToZG",total_finder < 9.5 && total_finder > 8.5 ,0,0,weight_1)}, procs_total, false);
-  */
-
   pm.min_print_ = true;
   pm.MakePlots(1);
 }

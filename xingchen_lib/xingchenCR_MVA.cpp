@@ -20,7 +20,7 @@
 #include "core/named_func.hpp"
 #include "core/utilities.hpp"
 #include "zgamma/zg_utilities.hpp"
-#include "core/xingchen.hpp"
+#include "core/xingchenCR_MVA.hpp"
 
 NamedFunc::VectorType fmu_sig(const Baby &b){
   std::vector<double> mu_sig_;
@@ -76,12 +76,14 @@ NamedFunc::VectorType fel_sig(const Baby &b){
   return el_sig_;
 }
 
+//Modified for CR
 NamedFunc::VectorType fph_sig(const Baby &b){
   std::vector<double> ph_sig_;
   for (unsigned iph = 0; iph < b.Photon_pt()->size(); iph++) {
     if (b.Photon_pt()->at(iph) <= 10. || abs(b.Photon_eta()->at(iph)) > 2.5 || !(b.Photon_isScEtaEB()->at(iph) || b.Photon_isScEtaEE()->at(iph))) ph_sig_.push_back(0.0);
     //else if (b.Photon_mvaID()->at(iph) > 0.2 && b.Photon_electronVeto()->at(iph) && b.Photon_pt()->at(iph) > 15.0 /*&& (b.Photon_mvaID_WP90->at(iph) && !b.Photon_mvaID_WP80->at(iph))*/) ph_sig_.push_back(1.0);
-    else if ((((abs(b.Photon_eta()->at(iph))<1.4442 && b.Photon_mvaID()->at(iph) > -0.4)||(abs(b.Photon_eta()->at(iph))>1.566 && abs(b.Photon_eta()->at(iph))<2.5 && b.Photon_mvaID()->at(iph) > -0.58))) && b.Photon_electronVeto()->at(iph) && b.Photon_pt()->at(iph) > 15.0) ph_sig_.push_back(1.0);
+    //else if ((((abs(b.Photon_eta()->at(iph))<1.4442 && b.Photon_mvaID()->at(iph) <= -0.4 && b.Photon_mvaID()->at(iph) > -0.8)||(abs(b.Photon_eta()->at(iph))>1.566 && abs(b.Photon_eta()->at(iph))<2.5 && b.Photon_mvaID()->at(iph) <= -0.58 && b.Photon_mvaID()->at(iph) > -0.8))) && b.Photon_electronVeto()->at(iph) && b.Photon_pt()->at(iph) > 15.0) ph_sig_.push_back(1.0);
+    else if ((((abs(b.Photon_eta()->at(iph))<1.4442 && b.Photon_mvaID()->at(iph) <= -0.4 && b.Photon_mvaID()->at(iph) > -0.8)||(abs(b.Photon_eta()->at(iph))>1.566 && abs(b.Photon_eta()->at(iph))<2.5  && b.Photon_mvaID()->at(iph) < -0.8))) && b.Photon_electronVeto()->at(iph) && b.Photon_pt()->at(iph) > 15.0) ph_sig_.push_back(1.0);
     else ph_sig_.push_back(0.0);
   }
   return ph_sig_;
@@ -254,31 +256,6 @@ NamedFunc::VectorType fphoton_flags(const Baby &b){
   }
 }
 
-NamedFunc::ScalarType fmindR(const Baby &b){
-  TLorentzVector e, m, p;
-  std::vector<double> el_sig_ = fel_sig(b);
-  std::vector<double> mu_sig_ = fmu_sig(b);
-  std::vector<double> ph_sig_ = fph_sig(b);
-  double mindr = 9999.0;
-  double tempdr = 9999.0;
-  for (unsigned j(0); j<ph_sig_.size(); j++){
-    if (ph_sig_[j] > 0.5) p.SetPtEtaPhiM(b.Photon_pt()->at(j), b.Photon_eta()->at(j), b.Photon_phi()->at(j), b.Photon_mass()->at(j));
-    else continue;
-    for (unsigned i(0); i<el_sig_.size();i++) {
-      if (el_sig_[i]>0.5)  e.SetPtEtaPhiM(b.Electron_pt()->at(i), b.Electron_eta()->at(i), b.Electron_phi()->at(i), b.Electron_mass()->at(i));
-      else continue;
-      tempdr = abs(e.DeltaR(p));
-      if (tempdr<mindr) mindr = tempdr;
-    }
-    for (unsigned i(0); i<mu_sig_.size();i++) {
-      if (mu_sig_[i]>0.5)  m.SetPtEtaPhiM(b.Muon_pt()->at(i), b.Muon_eta()->at(i), b.Muon_phi()->at(i), b.Muon_mass()->at(i));
-      else continue;
-      tempdr = abs(m.DeltaR(p));
-      if (tempdr<mindr) mindr = tempdr;
-    }
-  }
-  return mindr;
-}
 
 NamedFunc::ScalarType fpdgid (const Baby &b) {
   int index = -1;
@@ -577,15 +554,11 @@ NamedFunc::ScalarType fphoton_flags14(const Baby &b){
 
 NamedFunc::ScalarType fnph(const Baby &b){
   int nph_sig = 0;
+  std::vector<double> ph_sig = fph_sig(b);
   std::vector<double> mudR = fmuon_dR_list(b);
   std::vector<double> eledR = fele_dR_list(b);
   for (unsigned iph = 0; iph < b.Photon_pt()->size(); iph++) {
-    if (b.Photon_pt()->at(iph) <= 15.0) continue;
-    if (abs(b.Photon_eta()->at(iph)) > 2.5) continue;
-    if (!(b.Photon_isScEtaEB()->at(iph) || b.Photon_isScEtaEE()->at(iph))) continue;
-    // if (b.Photon_pfRelIso03_all()->at(iph)==PhotonRelIsoCut) continue; // no isolation cut in 2016...?
-    //if (b.Photon_mvaID()->at(iph) > 0.2 && b.Photon_electronVeto()->at(iph) && b.Photon_pt()->at(iph) > 15.0)
-    if (((abs(b.Photon_eta()->at(iph))<1.4442 && b.Photon_mvaID()->at(iph) > -0.4)||(abs(b.Photon_eta()->at(iph))>1.566 && abs(b.Photon_eta()->at(iph))<2.5 && b.Photon_mvaID()->at(iph) > -0.58)) && b.Photon_electronVeto()->at(iph) && mudR[iph]>0.5 && eledR[iph]>0.5)
+    if (ph_sig[iph] > 0.5 && mudR[iph]>0.5 && eledR[iph]>0.5)
       nph_sig++;
   }
   return nph_sig;

@@ -1,5 +1,5 @@
-#ifndef XC_FUNC
-#define XC_FUNC
+#ifndef XCCR_FUNC
+#define XCCR_FUNC
 
 #include <algorithm>
 #include <bitset>
@@ -29,7 +29,6 @@ NamedFunc::VectorType fph_sig(const Baby &b);
 NamedFunc::VectorType fele_dR_list(const Baby &b);
 //NamedFunc ele_dR_list("ele_dR_list", fele_dR_list);
 NamedFunc::VectorType fmuon_dR_list(const Baby &b);
-NamedFunc::ScalarType fmindR(const Baby &b);
 //inline NamedFunc muon_dR_list("muon_dR_list", fmuon_dR_list);
 NamedFunc::ScalarType fnph(const Baby &b);
 NamedFunc::ScalarType fjk1nph(const Baby &b);

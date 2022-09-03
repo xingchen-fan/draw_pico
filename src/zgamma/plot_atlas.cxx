@@ -182,11 +182,11 @@ int main() {
 //   pm.Push<Hist1D>(Axis(40,100,180, "llphoton_m[0]", "m_{Z#gamma} [GeV]", {125.3}), cat.at(3), cat_procs, ops).Weight(wgt).Tag("cat4");
 //   pm.Push<Hist1D>(Axis(20,100,180, "llphoton_m[0]", "m_{Z#gamma} [GeV]", {115,160}), cat.at(4), cat_procs, ops).Weight(wgt).Tag("cat5");
 //   pm.Push<Hist1D>(Axis(40,100,180, "llphoton_m[0]", "m_{Z#gamma} [GeV]", {125.3}), cat.at(5), cat_procs, ops).Weight(wgt).Tag("cat6");
-  pm.Push<Hist1D>(Axis(20,100,180, "llphoton_m[0]", "m_{Z#gamma} [GeV]", {}), cat.at(0), cat_procs, ops).Weight(wgt).Tag("cat1");
-  pm.Push<Hist1D>(Axis(40,100,180, "llphoton_m[0]", "m_{Z#gamma} [GeV]", {}), cat.at(1), cat_procs, ops).Weight(wgt).Tag("cat2");
-  pm.Push<Hist1D>(Axis(20,100,180, "llphoton_m[0]", "m_{Z#gamma} [GeV]", {}), cat.at(2), cat_procs, ops).Weight(wgt).Tag("cat3");
-  pm.Push<Hist1D>(Axis(40,100,180, "llphoton_m[0]", "m_{Z#gamma} [GeV]", {}), cat.at(3), cat_procs, ops).Weight(wgt).Tag("cat4");
-  pm.Push<Hist1D>(Axis(20,100,180, "llphoton_m[0]", "m_{Z#gamma} [GeV]", {}), cat.at(4), cat_procs, ops).Weight(wgt).Tag("cat5");
+  //pm.Push<Hist1D>(Axis(20,100,180, "llphoton_m[0]", "m_{Z#gamma} [GeV]", {}), cat.at(0), cat_procs, ops).Weight(wgt).Tag("cat1");
+  //pm.Push<Hist1D>(Axis(40,100,180, "llphoton_m[0]", "m_{Z#gamma} [GeV]", {}), cat.at(1), cat_procs, ops).Weight(wgt).Tag("cat2");
+  //pm.Push<Hist1D>(Axis(20,100,180, "llphoton_m[0]", "m_{Z#gamma} [GeV]", {}), cat.at(2), cat_procs, ops).Weight(wgt).Tag("cat3");
+  //pm.Push<Hist1D>(Axis(40,100,180, "llphoton_m[0]", "m_{Z#gamma} [GeV]", {}), cat.at(3), cat_procs, ops).Weight(wgt).Tag("cat4");
+  //pm.Push<Hist1D>(Axis(20,100,180, "llphoton_m[0]", "m_{Z#gamma} [GeV]", {}), cat.at(4), cat_procs, ops).Weight(wgt).Tag("cat5");
   pm.Push<Hist1D>(Axis(40,100,180, "llphoton_m[0]", "m_{Z#gamma} [GeV]", {}), cat.at(5), cat_procs, ops).Weight(wgt).Tag("cat6");
 //   pm.Push<Hist1D>(Axis(40,100,180, "llphoton_m[0]", "m_{Z#gamma} [GeV]", {115,170}), baseline && !vbf && relpT < 0.4, cat_procs, ops).Weight(wgt).Tag("catuntagged");
 //   pm.Push<Hist1D>(Axis(55,115,170, "llphoton_m[0]", "m_{Z#gamma} [GeV]", {}), cat.at(3), cat_procs, ops).Weight(wgt).Tag("cms-cat4");
