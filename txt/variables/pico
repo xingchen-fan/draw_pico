@@ -291,6 +291,11 @@ float w_isr
 float w_pu
 float w_prefire
 float eff_trig
+float w_photon_csev
+float w_photon_id
+float w_mu_id
+float w_mu_iso
+float w_el_id
 
 ################  Triggers copy straight from Nano, same names   ##################
 # Single lepton triggers
